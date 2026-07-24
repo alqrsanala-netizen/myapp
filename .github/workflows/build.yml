@@ -18,9 +18,6 @@ jobs:
       with:
         python-version: '3.10'
 
-    - name: Set up Android SDK
-      uses: android-actions/setup-android@v3
-
     - name: Install dependencies
       run: |
         sudo apt-get update
@@ -28,9 +25,15 @@ jobs:
         pip install --upgrade pip
         pip install buildozer cython
 
+    - name: Fix Buildozer Spec for API and Build-Tools
+      run: |
+        # هذا الأمر يبحث تلقائياً في ملف إعداداتك ويجبره على استخدام إصدار مستقر لا يتطلب رخص معقدة
+        sed -i 's/#android.api =.*/android.api = 31/' buildozer.spec || true
+        sed -i 's/android.api =.*/android.api = 31/' buildozer.spec || true
+        sed -i 's/#android.build_tools_version =.*/android.build_tools_version = 33.0.3/' buildozer.spec || true
+        sed -i 's/android.build_tools_version =.*/android.build_tools_version = 33.0.3/' buildozer.spec || true
+
     - name: Build with Buildozer
-      env:
-        BUILDER_ACCEPT_LICENSE: "1"
       run: |
         buildozer -v android debug
 
