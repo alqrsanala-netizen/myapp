@@ -25,13 +25,21 @@ jobs:
         pip install --upgrade pip
         pip install buildozer cython
 
-    - name: Fix Buildozer Spec for API and Build-Tools
+    - name: Accept Android SDK Licenses & Force Build-Tools
       run: |
-        # هذا الأمر يبحث تلقائياً في ملف إعداداتك ويجبره على استخدام إصدار مستقر لا يتطلب رخص معقدة
-        sed -i 's/#android.api =.*/android.api = 31/' buildozer.spec || true
-        sed -i 's/android.api =.*/android.api = 31/' buildozer.spec || true
-        sed -i 's/#android.build_tools_version =.*/android.build_tools_version = 33.0.3/' buildozer.spec || true
-        sed -i 's/android.build_tools_version =.*/android.build_tools_version = 33.0.3/' buildozer.spec || true
+        # إنشاء مجلد الرخص لضمان عدم رفضها
+        mkdir -p /home/runner/.android
+        sdkmanager --version || true
+        
+        # الطريقة الأضمن للموافقة على رخص أندرويد تلقائياً لمنع ظهور خطأ التراخيص
+        export ANDROID_HOME=$HOME/Library/Android/sdk
+        yes | buildozer android piter || true
+        
+        # أو الموافقة المباشرة عبر أداة التراخيص إن وجدت
+        if [ -d "$HOME/.buildozer/android/platform/android-sdk/cmdline-tools/latest/bin" ]; then
+          yes | $HOME/.buildozer/android/platform/android-sdk/cmdline-tools/latest/bin/sdkmanager --licenses || true
+          yes | $HOME/.buildozer/android/platform/android-sdk/cmdline-tools/latest/bin/sdkmanager "build-tools;33.0.3" "platforms;android-33" || true
+        fi
 
     - name: Build with Buildozer
       run: |
