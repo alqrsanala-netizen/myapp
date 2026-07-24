@@ -25,21 +25,22 @@ jobs:
         pip install --upgrade pip
         pip install buildozer cython
 
-    - name: Accept Android SDK Licenses & Force Build-Tools
+    - name: Force Android SDK 33 and Accept Licenses
       run: |
-        # إنشاء مجلد الرخص لضمان عدم رفضها
-        mkdir -p /home/runner/.android
-        sdkmanager --version || true
+        export ANDROID_HOME=$HOME/.buildozer/android/platform/android-sdk
+        mkdir -p $ANDROID_HOME
         
-        # الطريقة الأضمن للموافقة على رخص أندرويد تلقائياً لمنع ظهور خطأ التراخيص
-        export ANDROID_HOME=$HOME/Library/Android/sdk
-        yes | buildozer android piter || true
+        # تحميل وتثبيت أدوات سطر الأوامر الخاصة بأندرويد يدوياً وبأمان تام
+        cd /tmp
+        wget -q https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip -O cmdtools.zip
+        mkdir -p $ANDROID_HOME/cmdline-tools
+        unzip -q cmdtools.zip -d $ANDROID_HOME/cmdline-tools
+        mv $ANDROID_HOME/cmdline-tools/cmdline-tools $ANDROID_HOME/cmdline-tools/latest
         
-        # أو الموافقة المباشرة عبر أداة التراخيص إن وجدت
-        if [ -d "$HOME/.buildozer/android/platform/android-sdk/cmdline-tools/latest/bin" ]; then
-          yes | $HOME/.buildozer/android/platform/android-sdk/cmdline-tools/latest/bin/sdkmanager --licenses || true
-          yes | $HOME/.buildozer/android/platform/android-sdk/cmdline-tools/latest/bin/sdkmanager "build-tools;33.0.3" "platforms;android-33" || true
-        fi
+        # الموافقة الإجبارية على التراخيص وتثبيت الإصدار 33 حصرياً لتجنب الإصدار 37
+        export PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin
+        yes | sdkmanager --licenses || true
+        sdkmanager "platform-tools" "platforms;android-33" "build-tools;33.0.3" || true
 
     - name: Build with Buildozer
       run: |
