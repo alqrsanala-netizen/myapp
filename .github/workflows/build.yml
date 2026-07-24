@@ -2,7 +2,8 @@ name: Build Android APK
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [ "main" ]
+  workflow_dispatch:
 
 jobs:
   build:
@@ -20,18 +21,18 @@ jobs:
     - name: Install dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y git zip unzip openjdk-17-jdk autoconf libtool pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev  cmake libffi-dev libssl-dev
+        sudo apt-get install -y git zip unzip openjdk-17-jdk autoconf libtool pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev libtinfo5 cmake libffi-dev libssl-dev
         pip install --upgrade pip
         pip install buildozer cython
+        yes | /usr/local/lib/android/sdk/cmdline-tools/latest/bin/sdkmanager --licenses || true
+        /usr/local/lib/android/sdk/cmdline-tools/latest/bin/sdkmanager "build-tools;37.0.0" "platforms;android-33" || true
 
     - name: Build with Buildozer
-      env:
-        BUILDER_ACCEPT_LICENSE: "1"
       run: |
         buildozer -v android debug
 
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: package-apk
+        name: package
         path: bin/*.apk
